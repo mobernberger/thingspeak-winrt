@@ -93,3 +93,4 @@ This command returns a bool which is true when the command was successfully sent
 
 ### Notes:
 * If your channel is public you have to pass null instead of the Read API Key.
+* If you want to further dive into the APIs check out the documentation here: https://thingspeak.com/docs

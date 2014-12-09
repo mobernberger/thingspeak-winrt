@@ -397,6 +397,56 @@ namespace ThingSpeakWinRT
         }
 
         /// <summary>
+        /// Read specific feed in a Channel
+        /// </summary>
+        /// <param name="readApiKey">Read API Key for the channel to read (null if channel is public)</param>
+        /// <param name="channelId">Channel ID</param>
+        /// <param name="entryId">Channel ID</param>
+        /// <param name="status">Include status update in feed</param>
+        /// <param name="location">Include latitude, longitude and elevation in feed</param>
+        /// <returns>List of all data entries read</returns>
+        public async Task<ThingSpeakFeed> ReadFeedAsync(string readApiKey, int channelId, int entryId, bool status = false,
+            bool location = false)
+        {
+            //Create URI
+            _requestUri = _thingSpeakHost + "/channels/" + channelId + "/feeds/" + entryId + ".json" +
+                          ConstructQueryString(status, location);
+
+            //Start request
+            using (var httpClient = new HttpClient())
+            {
+                HttpResponseMessage httpResponse;
+
+                if (readApiKey == null)
+                {
+                    httpResponse = await httpClient.GetAsync(new Uri(_requestUri));
+                }
+                else
+                {
+                    var request = new HttpRequestMessage
+                    {
+                        RequestUri = new Uri(_requestUri),
+                        Method = HttpMethod.Get
+                    };
+                    request.Headers.Add("X-THINGSPEAKAPIKEY", readApiKey);
+                    httpResponse = await httpClient.SendRequestAsync(request);
+                }
+
+
+                if (httpResponse.StatusCode == HttpStatusCode.Ok)
+                {
+                    var entry = JsonConvert.DeserializeObject<ThingSpeakFeed>(httpResponse.Content.ToString());
+                    if (entry.CreatedAt != null)
+                    {
+                        entry.CreatedAt = entry.CreatedAt.Value.ToLocalTime();
+                    }
+                    return entry;
+                }
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Send Twitter Message via ThingTweet
         /// </summary>
         /// <param name="apiKey">API Key for the ThingTweet Account</param>

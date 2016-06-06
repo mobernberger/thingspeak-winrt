@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Windows.Web.Http;
 using Newtonsoft.Json;
 using UnicodeEncoding = Windows.Storage.Streams.UnicodeEncoding;
+using ThingSpeakWinRT.Exceptions;
 
 namespace ThingSpeakWinRT
 {
@@ -136,15 +137,34 @@ namespace ThingSpeakWinRT
                     "application/x-www-form-urlencoded");
                 var httpResponse = await httpClient.PostAsync(new Uri(_requestUri), stringContent);
 
+                // Making response as invalid (default)
+                feedEntry.EntryId = null;
+
                 if (httpResponse.StatusCode == HttpStatusCode.Ok)
                 {
-                    feedEntry.EntryId =
-                        Convert.ToInt32(
-                            JsonConvert.DeserializeObject<ThingSpeakFeed>(httpResponse.Content.ToString()).EntryId);
-                }
-                else
-                {
-                    feedEntry.EntryId = null;
+                    // Getting response content
+                    var content = httpResponse.Content.ToString().Trim();
+
+                    // Making sure it is a JSON response, any other response is an error code
+                    if (content.StartsWith("{") && content.EndsWith("}"))
+                    {
+                        try
+                        {
+                            var response = JsonConvert.DeserializeObject<ThingSpeakFeed>(content);
+
+                            feedEntry.EntryId = response.EntryId;
+                            feedEntry.ChannelId = response.ChannelId;
+
+                        }
+                        catch (Exception ex)
+                        {
+                            // A JSON was returned, but we could not parse it, either they upgraded their API or it is corrupted.
+                            var exception = new InvalidResponseException("ThingSpeak returned an unexpected result. Check inner exception for casting exception and Data[raw] for raw response.", ex);
+                            exception.Data.Add("raw", content);
+
+                            throw exception;
+                        }
+                    }
                 }
 
                 return feedEntry;

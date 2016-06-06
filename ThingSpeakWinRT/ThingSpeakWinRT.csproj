@@ -38,6 +38,7 @@
     <TargetPlatform Include="Windows, Version=8.1" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Exceptions\InvalidResponseException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ThingSpeakChannel.cs" />
     <Compile Include="ThingSpeakClient.cs" />
